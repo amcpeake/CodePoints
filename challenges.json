@@ -1,0 +1,69 @@
+{
+	"C1": {
+    	"name": "Challenge 1: Hello World",
+    	"description": "Write a basic hello world program. Print 'Hello World!'",
+    	"languages": ["any"],
+    	"codebase": {
+			"x86": "section .data\n\tmsg:\tdb 'Hi there', 10\n\tmsgLen:\tequ $-msg\n\nsection .text\n\tglobal _start\n\n_start:\n\tmov eax, 4\n\tmov ebx, 1\n\tmov ecx, msg\n\tmov edx, msgLen\n\n\tint 80h\n\n\tmov eax, 1\n\tmov ebx, 0\n\tint 80h",
+			"bash": "#!/bin/bash\necho \"Hi there\"",
+			"c": "#include <stdio.h>\nint main() {\n\tprintf(\"Hi there\");\n\treturn 0;\n}",
+			"cpp": "#include <iostream>\nusing namespace std;\nint main() {\n\tcout << \"Hi there\" << endl;\n\treturn 0;\n}",
+			"c#": "public class HelloWorld {\n\tpublic static int Main() {\n\t\tSystem.Console.WriteLine(\"Hi there\");\n\t\treturn 0;\n\t}\n}",
+			"java": "class HelloWorld {\n\tpublic static void main(String[] args) {\n\t\tSystem.out.println(\"Hi there\");\n\t}\n}",
+			"javascript": "print(\"Hi there\");\n// Since this JavaScript code is being run using Rhino - a command-line JS engine - instead of a browser, we use the print function instead of console.log, alert, etc.",
+			"php": "<?php\n\tprint(\"Hi there\");\n?>",
+			"python2": "print(\"Hi there\")",
+			"python3": "print(\"Hi there\")",
+			"ruby": "puts(\"Hi there\")"
+		},
+		"io": {
+			"output": [
+				["Hello World!"]
+			]
+		}
+	},
+	"C2": {
+		"name": "Challenge 2: Basic Arithmetic",
+		"description": "Two outputs will be provided to your program, a, and b. Take these values and print the following three lines:\n\n\t1. Sum of a and b (a + b)\n\t2. Difference of a and b (a - b)\n\t3. Product of a and b (a * b)",
+		"languages": ["any"],
+		"codebase": {
+			"bash": "#!/bin/bash\nread a\nread b\n# Your code here:",
+			"c": "#include <stdio.h>\nint main() {\n\tint a, b;\n\tscanf(\"%d\", &a);\n\tscanf(\"%d\", &b);\n\t// Your code here:\n\treturn 0;\n}",
+			"cpp": "#include <iostream>\nusing namespace std;\nint main() {\n\tint a, b;\n\tcin >> a >> b;\n\t// Your code here:\n\treturn 0;\n}",
+			"c#": "public class BasicArithmetic {\n\tpublic static int Main() {\n\t\tint a, b;\n\t\ta = int.Parse(System.Console.ReadLine());\n\t\tb = int.Parse(System.Console.ReadLine());\n\t\t// Your code here:\n\t\treturn 0;\n\t}\n}",
+			"java": "import java.util.Scanner;\nclass BasicArithmetic\n{\n\tpublic static void main(String[] args)\n\t{\n\t\tScanner s = new Scanner(System.in);\n\t\tint a = s.nextInt();\n\t\tint b = s.nextInt();\n\t\t// Your code here:\n\t}\n}",
+			"javascript": "importPackage(java.io);\nimportPackage(java.lang);\nvar stdin = new BufferedReader(new InputStreamReader(System['in']));\nlet a = parseInt(stdin.readLine());\nlet b = parseInt(stdin.readLine());\n// Your code here:",
+			"php": "<?php\n\t$a = readline();\n\t$b = readline();\n\t// Your code here:\n?>",
+			"python2": "a = int(input())\nb = int(input())\n# Your code here:",
+			"python3": "a = int(input())\nb = int(input())\n# Your code here:",
+			"ruby": "a = gets.to_i\nb = gets.to_i\n# Your code here:"
+		},
+		"io": {
+			"input": [
+				[3, 2],
+				[1, 2],
+				[17, 12],
+				[8, 9],
+				[
+				{
+					"type": "int",
+					"min": -10000,
+					"max": 10000
+				},
+				{
+					"type": "int",
+					"min": -10000,
+					"max": 10000
+				}
+				]
+			],
+			"output": [
+				[5, 1, 6],
+				[3, -1, 2],
+				[29, 5, 204],
+				[17, -1, 72],
+				["inputcase[0]+inputcase[1]", "inputcase[0]-inputcase[1]", "inputcase[0]*inputcase[1]"]
+			]
+		}
+	}
+}
