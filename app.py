@@ -213,7 +213,7 @@ def codepoints():
 
         return jsonify(response)
     if request.method == 'GET':
-        return render_template('index2.html')
+        return render_template('codepoints.html')
 
 
 # ======================================================================================================================
