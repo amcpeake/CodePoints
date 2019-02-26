@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <style>
+        .fail {
+            color: red;
+        }
+
+        .pass {
+            color: green;
+        }
+
+        #descdiv {
+            width: 40%;
+            float: left;
+        }
+
+        #code {
+            width: 30%;
+            margin-right: 2%;
+            margin-bottom: 2%;
+            float: left;
+        }
+
+        #infdiv {
+            position: absolute;
+            top: 50%;
+        }
+
+        table {
+            border-collapse: collapse;
+        }
+
+        table, th, td {
+            border: 2px solid black;
+            padding-left: 2px;
+            padding-right: 5px;
+        }
+
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.2/ace.js" type="text/javascript" charset="utf-8"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.2/ext-language_tools.js" type="text/javascript" charset="utf-8"></script>
+    <script>
+
+        HTMLElement.prototype.appendChildren = function() { // Used to append multiple children simultaneously
+            let documentFragment = document.createDocumentFragment(); // Document fragment prevents multiple reloads
+            arguments.items.map(arg => documentFragment.appendChild(arg));
+            this.appendChild(documentFragment);
+        };
+
+        function parse(element, callback = send) { // DONE; MOSTLY OPTIMIZED
+            let sel = document.getElementById('language');
+            let type = element.dataset.type;
+            let language = sel.options[sel.selectedIndex].value;
+            let request = {'type': type, 'language': language};
+
+            if (type === 'get') {
+                request['index'] = element.dataset.index;
+            }
+            else if (type === 'submit') {
+                request['index'] = element.dataset.index;
+                request['code'] = ace.edit('code').getValue();
+            }
+            else if (type !== 'list') {
+                return; // Silently fail; Invalid type
+            }
+
+            console.log('Request:\n', request);
+            if (callback) {
+                    callback(request);
+            } else {
+                return request;
+            }
+        }
+
+        function send(request, callback = build){ // DONE; MOSTLY OPTIMIZED
+            fetch('codepoints', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(request)
+            })
+                .then(response => {
+                    if (response.ok)
+                        return response.json();
+                })
+                .then(respJson => {
+                    if (respJson) {
+                        if (respJson['type'] === 'error')
+                            alert(respJson['msg']);
+                        else
+                            callback(respJson);
+                    }
+                    else
+                        alert('Error: Malformed response received from backend');
+                })
+                .catch(e => document.getElementById('output').innerHTML+=e);
+        }
+
+        function build(response){
+            console.log('Response:\n', response);
+            let type = response['type'];
+            let codeArea = document.getElementById('codediv');
+
+            if (type === 'list' || type === 'get')
+                Array.from(codeArea.children).map(c => codeArea.removeChild(c)); // Remove all old elements from div
+
+            if (type === 'list') { // CREATES BUTTONS
+                response['challenges'].map(challenge => {
+                    let button = document.createElement('button');
+                    button.innerHTML = challenge.name;
+                    button.dataset.index = challenge.index;
+                    button.dataset.type = 'get';
+                    button.addEventListener('click', (e) => parse(e.currentTarget));
+                    codeArea.appendChild(button);
+                });
+            }
+
+            else if (type === 'get') {
+                let challenge = response['challenge'];
+                let sel = document.getElementById('language');
+                let language = sel.options[sel.selectedIndex].dataset.syn;
+                let title = document.createElement('h4'),
+                    code = document.createElement('div'),
+                    button = document.createElement('button'),
+                    p = document.createElement('p'),
+                    desc = document.createElement('p'),
+                    descdiv = document.createElement('div'),
+                    infdiv = document.createElement('div');
+
+                title.innerHTML = challenge['name'];
+
+                p.id = 'output';
+                p.style.whiteSpace = 'pre-wrap';
+
+                desc.innerHTML = 'Description:\n' + challenge['description'] + '\n';
+                if (challenge.hasOwnProperty('io')) {
+                    let io = challenge['io'];
+                    desc.innerHTML += Object.keys(io).map(
+                        type => `\n\nSample ${type}:\n${io[type].map(
+                            set => `[ ${set.join(', ')} ]`).join(',\n')}`).join('');
+                }
+                desc.style.whiteSpace = 'pre-wrap';
+                descdiv.id = 'desc';
+                descdiv.appendChild(desc);
+
+                button.id = 'submitbtn';
+                button.innerHTML = 'Submit';
+                button.dataset.type = 'submit';
+                button.dataset.index = challenge.index;
+                button.addEventListener('click', (e) => parse(e.currentTarget));
+
+                infdiv.id = 'infdiv';
+                infdiv.appendChildren(button, p);
+
+                code.id = 'code';
+                code.style = `position:relative;width:50%;height:${window.innerHeight * 0.4}px;margin-bottom:20px;`;
+                codeArea.appendChildren(title, code, descdiv, infdiv);
+
+
+                // Editor configuration:
+                var editor = ace.edit('code');
+
+                editor.setOptions({
+                    mode: `ace/mode/${language}`,
+                    theme: "ace/theme/idle_fingers",
+                    selectionStyle: "line",
+                    highlightActiveLine: true,
+                    highlightSelectedWord: true,
+                    cursorStyle: "smooth",
+                    showPrintMargin: true,
+                    printMarginColumn: Math.floor((code.offsetWidth/7.5) * 0.8),
+                    wrap: true,
+                    fontSize: "14px",
+                    fixedWidthGutter: true,
+                    newLineMode: "unix",
+                    useSoftTabs: false,
+                    enableLiveAutocompletion: true
+                });
+
+                if (challenge.hasOwnProperty('codebase')) {
+                    editor.setValue(challenge['codebase']);
+                }
+                else
+                    editor.setValue('...');
+
+                editor.focus();
+
+                const search = editor.find('Your code here:');
+                editor.replaceAll('Your code here:\n');
+
+                if (search)
+                    editor.gotoLine(search['start']['row'] + 2);
+                else
+                    editor.navigateFileEnd();
+            }
+
+            else if (type === 'submit') {
+                let p = document.getElementById('output');
+                p.classList = response['status'];
+                p.innerHTML = '';
+                if (response['status'] === 'fail' && response.hasOwnProperty('errors')) {
+                    for (let error in response['errors']){
+                        p.innerHTML+=`${response['errors'][error]}\n`;
+                    }
+                }
+
+                if (response.hasOwnProperty('cases'))
+                {
+                    p.innerHTML = "<h2>Test Cases:\n</h2>";
+                    for (let icase in response['cases']) {
+                        p.innerHTML += `<h3>Case ${parseInt(icase) + 1}: ${response['cases'][icase]['status']}</h3>`;
+                        if (response['cases'][icase].hasOwnProperty('values')) {
+                            p.innerHTML += `<table class='outtable'><thead><tr><th>Value</th><th>Expected</th><th>Actual</th><th>Status</th></tr></thead><tbody>${Object.keys(response['cases'][icase]['values']).map(output => `<tr><td>${parseInt(output) + 1}</td><td>${response['cases'][icase]['values'][output]['expected']}</td><td>${response['cases'][icase]['values'][output]['actual']}</td><td>${response['cases'][icase]['values'][output]['status']}</td></tr>`)}</tbody></table>`;
+                        }
+                    }
+                }
+            }
+        }
+
+        window.onload = () => {
+            let sel = document.getElementById('language');
+            parse(sel);
+            sel.addEventListener('change', (e) => {
+                parse(e.currentTarget);
+            } );
+        }
+    </script>
+    <meta charset='UTF-8'>
+    <title>CodePoints</title>
+</head>
+<body>
+<label for='language'>Select a language:</label>
+<select data-type='list' id='language'>
+    <option value='x86' data-syn='assembly_x86'>x86</option>
+    <option value='bash' data-syn='sh'>Bash</option>
+    <option value='c' data-syn='c_cpp'>C</option>
+    <option value='cpp' data-syn='c_cpp'>C++</option>
+    <option value='c#' data-syn='csharp'>C#</option>
+    <option value='java' data-syn='java'>Java</option>
+    <option value='javascript' data-syn='javascript'>JavaScript</option>
+    <option value='php' data-syn='php'>PHP</option>
+    <option value='python2' data-syn='python'>Python 2</option>
+    <option selected value='python3' data-syn='python'>Python 3</option>
+    <option value='ruby' data-syn='ruby'>Ruby</option>
+</select>
+<br>
+<div id='codediv'></div>
+
+</body>
+</html>
